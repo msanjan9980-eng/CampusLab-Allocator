@@ -1,16 +1,72 @@
-# React + Vite
+# LabLink - GenAI Campus Laboratory Resource Sharing
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+![LabLink Banner](https://images.unsplash.com/photo-1532094349884-543bc11b234d?q=80&w=1200&auto=format&fit=crop)
 
-Currently, two official plugins are available:
+## 📖 Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+**LabLink** is a GenAI-powered platform designed to solve the fragmentation of campus laboratory resources. Students often struggle to discover, book, and get approval for specialized equipment across different departments. LabLink provides a centralized, intelligent hub for resource allocation.
 
-## React Compiler
+Built for the **PromptWars x Cynergy Coding Club Hackathon**.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## ✨ Key Features
 
-## Expanding the Oxlint configuration
+- **🧠 GenAI Conflict Resolution:** A smart engine that analyzes booking requests, reads project justifications, and intelligently resolves scheduling conflicts by suggesting alternative equipment or time slots.
+- **⏱️ Time-Slot Collision Detection:** The system prevents double-booking and visually disables already reserved time slots.
+- **🏢 Cross-Department Discovery:** A unified catalog of equipment (Microscopes, 3D Printers, Oscilloscopes, etc.) with live status tracking, search, and sorting.
+- **👨‍🏫 Faculty Approval Portal:** A dedicated dashboard for faculty members to review, approve, reject, and export project-based access requests.
+- **📊 Live Analytics:** Real-time utilization metrics calculated dynamically based on active bookings, paired with a live activity feed.
+- **💾 State Persistence:** All bookings, requests, and favorites are saved locally via `localStorage`.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## 🛠️ Tech Stack
+
+- **Frontend:** React 18, Vite
+- **Styling:** Tailwind CSS (Custom Bento-Box layout, Glassmorphism)
+- **Icons:** Lucide React
+- **Testing:** Vitest, React Testing Library
+- **Architecture:** Modularized into `components` (reusable UI) and `views` (page layouts) for maximum maintainability.
+
+## 🚀 Getting Started Locally
+
+1. **Clone the repository:**
+
+   ```bash
+   git clone https://github.com/msanjan9980-eng/CampusLab-Allocator.git
+   ```
+
+2. **Navigate into the directory:**
+
+   ```bash
+   cd CampusLab-Allocator
+   ```
+
+3. **Install dependencies:**
+
+   ```bash
+   npm install
+   ```
+
+4. **Start the development server:**
+
+   ```bash
+   npm run dev
+   ```
+
+5. **Run the test suite:**
+
+   ```bash
+   npm run test
+   ```
+
+## 🌐 Live Deployment
+
+The application is deployed on Vercel:
+
+https://campus-laballocator.vercel.app/
+
+## 🔐 Demo Access
+
+*No login is required for evaluation.*
+
+Use the **"Demo Role View"** toggle at the bottom left of the sidebar to instantly switch between the **Student** view (to book equipment) and the **Faculty** view (to approve requests).
+
+Use the **"Reset Demo Data"** button to clear the state and start fresh.
