@@ -20,7 +20,9 @@ export default function BookingModal({ selectedItem, setSelectedItem, isAiResolv
     const d = new Date(); d.setDate(d.getDate() + 7); return d.toISOString().split('T')[0];
   });
 
-  // Accessibility: Close on Escape key
+  // Get today's date in YYYY-MM-DD format for the min attribute
+  const todayString = new Date().toISOString().split('T')[0];
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') { setSelectedItem(null); setAiRecommendation(null); }
@@ -84,7 +86,7 @@ export default function BookingModal({ selectedItem, setSelectedItem, isAiResolv
                 </div>
                 <div>
                    <label className="block text-xs font-medium text-slate-400 mb-2">Project Deadline</label>
-                   <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none [color-scheme:dark]" />
+                   <input type="date" min={todayString} value={deadline} onChange={(e) => setDeadline(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none [color-scheme:dark]" />
                    <p className="text-[10px] text-slate-500 mt-2 leading-tight">The GenAI engine uses this date to prioritize requests.</p>
                 </div>
               </div>
@@ -100,7 +102,7 @@ export default function BookingModal({ selectedItem, setSelectedItem, isAiResolv
           )}
 
           {isAiResolving && (
-            <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
+            <div className="py-12 flex flex-col items-center justify-center text-center space-y-4" aria-live="polite" role="status">
               <div className="relative">
                 <div className="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
                 <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-fuchsia-400 animate-pulse" size={24} />
@@ -113,7 +115,7 @@ export default function BookingModal({ selectedItem, setSelectedItem, isAiResolv
           )}
 
           {aiRecommendation && !isAiResolving && (
-            <div className={`p-4 rounded-2xl border ${aiRecommendation.conflict ? 'bg-amber-500/10 border-amber-500/20' : 'bg-emerald-500/10 border-emerald-500/20'}`}>
+            <div className={`p-4 rounded-2xl border ${aiRecommendation.conflict ? 'bg-amber-500/10 border-amber-500/20' : 'bg-emerald-500/10 border-emerald-500/20'}`} aria-live="polite">
               <div className="flex items-start gap-3">
                 {aiRecommendation.conflict ? <AlertTriangle className="text-amber-400 shrink-0" /> : <CheckCircle className="text-emerald-400 shrink-0" />}
                 <div>

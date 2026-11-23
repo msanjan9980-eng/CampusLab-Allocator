@@ -40,7 +40,6 @@ export default function App() {
     localStorage.setItem('lablink_bookings', JSON.stringify(bookings));
   }, [requests, bookings]);
 
-  // Close notifications when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
@@ -80,6 +79,7 @@ export default function App() {
     showToast('Request submitted for Faculty Approval!', 'success');
   };
 
+  // UPGRADED: Time-slot collision detection
   const simulateGenAI = (item, time, justification, deadline) => {
     return new Promise(resolve => setTimeout(() => {
       let conflict = false;
@@ -87,11 +87,18 @@ export default function App() {
       let suggestion = "Booking confirmed. Please arrive 10 minutes early for equipment calibration.";
       const daysUntilDeadline = Math.ceil((new Date(deadline) - new Date()) / (1000 * 60 * 60 * 24));
 
+      // Check if equipment is generally unavailable
       if (item.status === 'In Use' || item.status === 'Maintenance') {
         conflict = true;
         message = `I detected a scheduling conflict. The ${item.name} is currently marked as ${item.status}.`;
         suggestion = `I recommend booking the 'Prusa MK3S+ FDM Printer' instead. It has the same capabilities for your project "${justification}" and is available at your requested slot.`;
       } 
+      // Check if THIS specific time slot is already booked in the system
+      else if (bookings.some(b => b.equipment === item.name && b.time === time && b.status !== 'Rejected')) {
+        conflict = true;
+        message = `I detected a double-booking conflict. The ${item.name} is already reserved by another student during the ${time} slot.`;
+        suggestion = "I suggest moving your request to the 16:00 - 18:00 slot, which is currently empty, or choosing a different piece of equipment.";
+      }
       else if (daysUntilDeadline <= 3 && daysUntilDeadline >= 0) {
         message = `Urgent allocation detected. Your project deadline is in ${daysUntilDeadline} days. I have prioritized your request and fast-tracked faculty approval.`;
         suggestion = `Booking confirmed for ${time}. Equipment will be pre-calibrated for your arrival.`;
@@ -99,11 +106,6 @@ export default function App() {
       else if (justification.toLowerCase().includes('print') && item.id !== 2) {
         message = "Resource allocated. However, I noticed your project requirements mention 'printing'. Are you sure you don't need the Engineering 3D Printer?";
       } 
-      else if (time === '14:00 - 16:00' && item.id === 4) {
-        conflict = true;
-        message = "High demand detected for this equipment at 14:00. A faculty lab session is already scheduled.";
-        suggestion = "I suggest moving your request to the 16:00 - 18:00 slot, which is currently empty, or using the secondary Oscilloscope in Lab B.";
-      }
       resolve({ conflict, message, suggestion });
     }, 1800));
   };
@@ -122,6 +124,11 @@ export default function App() {
       return matchesSearch && matchesFilter;
     });
   }, [searchQuery, activeFilter]);
+
+  // Dynamic notification count based on role
+  const notificationCount = role === 'faculty' 
+    ? requests.filter(r => r.status === 'Pending').length 
+    : bookings.filter(b => b.status === 'Pending Faculty Approval').length;
 
   return (
     <div className="flex h-screen bg-[#050505] text-slate-200 font-sans selection:bg-indigo-500/30 antialiased overflow-hidden">
@@ -155,27 +162,36 @@ export default function App() {
             <div className="relative" ref={notificationRef}>
               <button onClick={() => setShowNotifications(!showNotifications)} aria-label="Notifications" className="p-2 text-slate-400 hover:text-white transition-colors relative outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-full">
                 <Bell size={20} strokeWidth={1.5} />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-fuchsia-500 rounded-full border-2 border-[#050505]"></span>
+                {notificationCount > 0 && (
+                  <span className="absolute top-1 right-1 w-4 h-4 bg-fuchsia-500 text-white text-[9px] font-bold flex items-center justify-center rounded-full border-2 border-[#050505]">
+                    {notificationCount}
+                  </span>
+                )}
               </button>
               
               {showNotifications && (
                 <div className="absolute right-0 mt-3 w-80 bg-[#0F0F11] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                  <div className="p-4 border-b border-white/5 bg-white/[0.02]">
+                  <div className="p-4 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
                     <h3 className="text-sm font-medium text-white">Notifications</h3>
+                    {notificationCount > 0 && <span className="text-xs text-indigo-400">{notificationCount} unread</span>}
                   </div>
                   <div className="max-h-64 overflow-y-auto">
-                    <div className="p-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors flex gap-3">
-                      <div className="mt-0.5 p-1.5 bg-indigo-500/10 rounded-full text-indigo-400"><Sparkles size={14} /></div>
-                      <div>
-                        <p className="text-sm text-slate-200">GenAI optimized your schedule.</p>
-                        <p className="text-xs text-slate-500 mt-1">10 minutes ago</p>
+                    {notificationCount > 0 ? (
+                      <div className="p-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors flex gap-3">
+                        <div className="mt-0.5 p-1.5 bg-indigo-500/10 rounded-full text-indigo-400"><Clock size={14} /></div>
+                        <div>
+                          <p className="text-sm text-slate-200">You have {notificationCount} pending {role === 'faculty' ? 'approvals' : 'booking requests'}.</p>
+                          <p className="text-xs text-slate-500 mt-1">Action required</p>
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="p-6 text-center text-sm text-slate-500">No new notifications</div>
+                    )}
                     <div className="p-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors flex gap-3">
-                      <div className="mt-0.5 p-1.5 bg-emerald-500/10 rounded-full text-emerald-400"><CheckCircle size={14} /></div>
+                      <div className="mt-0.5 p-1.5 bg-emerald-500/10 rounded-full text-emerald-400"><Sparkles size={14} /></div>
                       <div>
-                        <p className="text-sm text-slate-200">A booking was approved by Faculty.</p>
-                        <p className="text-xs text-slate-500 mt-1">2 hours ago</p>
+                        <p className="text-sm text-slate-200">GenAI scheduling engine is online.</p>
+                        <p className="text-xs text-slate-500 mt-1">System update</p>
                       </div>
                     </div>
                   </div>
