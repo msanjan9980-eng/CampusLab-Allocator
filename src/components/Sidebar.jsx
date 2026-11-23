@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Search, Calendar, FlaskConical, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Search, Calendar, FlaskConical, ShieldCheck, RefreshCcw } from 'lucide-react';
 
 export const NavItem = ({ icon: Icon, label, active, onClick }) => (
   <button 
@@ -15,6 +15,12 @@ export const NavItem = ({ icon: Icon, label, active, onClick }) => (
 );
 
 export default function Sidebar({ currentView, setCurrentView, role, setRole }) {
+  const resetData = () => {
+    localStorage.removeItem('lablink_requests');
+    localStorage.removeItem('lablink_bookings');
+    window.location.reload();
+  };
+
   return (
     <aside className="w-[260px] border-r border-white/[0.06] bg-[#0A0A0A] flex flex-col">
       <div className="h-20 flex items-center px-6 border-b border-white/[0.06]">
@@ -39,7 +45,7 @@ export default function Sidebar({ currentView, setCurrentView, role, setRole }) 
         )}
       </nav>
 
-      <div className="p-4 border-t border-white/[0.06]">
+      <div className="p-4 border-t border-white/[0.06] space-y-3">
         <div className="bg-[#121214] rounded-xl p-3 border border-white/[0.06]">
           <p className="text-xs text-slate-400 mb-3 font-medium">Demo Role View</p>
           <div className="flex bg-black/40 rounded-lg p-1">
@@ -47,6 +53,10 @@ export default function Sidebar({ currentView, setCurrentView, role, setRole }) 
             <button onClick={() => { setRole('faculty'); setCurrentView('approvals'); }} className={`flex-1 text-xs py-1.5 rounded-md transition-all font-medium ${role === 'faculty' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}>Faculty</button>
           </div>
         </div>
+        
+        <button onClick={resetData} className="w-full py-2 flex items-center justify-center gap-2 text-xs font-medium text-slate-400 hover:text-white transition-colors bg-white/[0.02] hover:bg-white/[0.05] rounded-lg border border-white/5">
+          <RefreshCcw size={14} /> Reset Demo Data
+        </button>
       </div>
     </aside>
   );
