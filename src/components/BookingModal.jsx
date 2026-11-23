@@ -1,5 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Sparkles, AlertTriangle, CheckCircle } from 'lucide-react';
+
+// Typewriter Component for AI Text
+const TypewriterText = ({ text, speed = 20 }) => {
+  const [displayedText, setDisplayedText] = useState('');
+  
+  useEffect(() => {
+    let i = 0;
+    const typingInterval = setInterval(() => {
+      if (i < text.length) {
+        setDisplayedText(text.substring(0, i + 1));
+        i++;
+      } else {
+        clearInterval(typingInterval);
+      }
+    }, speed);
+    
+    return () => clearInterval(typingInterval);
+  }, [text, speed]);
+
+  return <span>{displayedText}</span>;
+};
 
 export default function BookingModal({ selectedItem, setSelectedItem, isAiResolving, setIsAiResolving, aiRecommendation, setAiRecommendation, addBooking, selectedTime, setSelectedTime, simulateGenAI }) {
   const [justification, setJustification] = useState('');
@@ -92,10 +113,14 @@ export default function BookingModal({ selectedItem, setSelectedItem, isAiResolv
                   <h4 className={`font-semibold ${aiRecommendation.conflict ? 'text-amber-400' : 'text-emerald-400'}`}>
                     {aiRecommendation.conflict ? 'Conflict Detected' : 'Booking Optimized'}
                   </h4>
-                  <p className="text-sm text-slate-300 mt-1 leading-relaxed">{aiRecommendation.message}</p>
+                  <p className="text-sm text-slate-300 mt-1 leading-relaxed">
+                    <TypewriterText text={aiRecommendation.message} />
+                  </p>
                   <div className="mt-4 p-3 bg-black/40 rounded-xl border border-white/5">
                     <p className="text-xs text-indigo-300 font-medium flex items-center gap-1 mb-1"><Sparkles size={12}/> AI Suggestion</p>
-                    <p className="text-sm text-slate-300">{aiRecommendation.suggestion}</p>
+                    <p className="text-sm text-slate-300">
+                      <TypewriterText text={aiRecommendation.suggestion} speed={15} />
+                    </p>
                   </div>
                   <button onClick={() => { setSelectedItem(null); setAiRecommendation(null); }} className="mt-4 w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium transition-colors text-sm focus-visible:ring-2 focus-visible:ring-white outline-none">
                     {aiRecommendation.conflict ? 'Accept Alternative' : 'Close'}
