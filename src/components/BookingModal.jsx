@@ -42,7 +42,6 @@ export default function BookingModal({ selectedItem, setSelectedItem, isAiResolv
     setAiRecommendation(result);
 
     if (!result.conflict) {
-      // Calculate urgency based on deadline
       const today = new Date();
       const deadlineDate = new Date(deadline);
       const daysUntilDeadline = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
@@ -54,10 +53,30 @@ export default function BookingModal({ selectedItem, setSelectedItem, isAiResolv
         date: deadline, 
         time: selectedTime,
         status: 'Pending Faculty Approval',
-        justification: justification || "General lab work", // Pass this to create the request
+        justification: justification || "General lab work",
         urgency: urgency
       });
     }
+  };
+
+  const handleAcceptAlternative = () => {
+    const today = new Date();
+    const deadlineDate = new Date(deadline);
+    const daysUntilDeadline = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
+    const urgency = daysUntilDeadline <= 3 ? 'High' : 'Medium';
+
+    addBooking({
+      id: Date.now(),
+      equipment: "Prusa MK3S+ FDM Printer (Alternative)", 
+      date: deadline, 
+      time: selectedTime,
+      status: 'Pending Faculty Approval',
+      justification: justification ? `${justification} (AI suggested alternative)` : "AI suggested alternative",
+      urgency: urgency
+    });
+    
+    setSelectedItem(null); 
+    setAiRecommendation(null);
   };
 
   return (
@@ -148,8 +167,11 @@ export default function BookingModal({ selectedItem, setSelectedItem, isAiResolv
                       <TypewriterText text={aiRecommendation.suggestion} speed={15} />
                     </p>
                   </div>
-                  <button onClick={() => { setSelectedItem(null); setAiRecommendation(null); }} className="mt-4 w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium transition-colors text-sm focus-visible:ring-2 focus-visible:ring-white outline-none">
-                    {aiRecommendation.conflict ? 'Accept Alternative' : 'Confirm Booking'}
+                  <button 
+                    onClick={aiRecommendation.conflict ? handleAcceptAlternative : () => { setSelectedItem(null); setAiRecommendation(null); }} 
+                    className="mt-4 w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium transition-colors text-sm focus-visible:ring-2 focus-visible:ring-white outline-none"
+                  >
+                    {aiRecommendation.conflict ? 'Accept Alternative' : 'Close'}
                   </button>
                 </div>
               </div>

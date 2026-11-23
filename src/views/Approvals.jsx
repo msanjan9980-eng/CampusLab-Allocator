@@ -2,10 +2,17 @@ import React from 'react';
 import { Check } from 'lucide-react';
 
 export default function Approvals({ requests, handleApproval }) {
+  // Sort so Pending requests are always at the top
+  const sortedRequests = [...requests].sort((a, b) => {
+    if (a.status === 'Pending' && b.status !== 'Pending') return -1;
+    if (a.status !== 'Pending' && b.status === 'Pending') return 1;
+    return 0;
+  });
+
   return (
     <div className="max-w-4xl mx-auto space-y-4">
-      {requests.map(req => (
-        <div key={req.id} className="bg-[#0F0F11] border border-white/[0.06] rounded-2xl p-6 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between hover:border-white/[0.12] transition-colors">
+      {sortedRequests.map(req => (
+        <div key={req.id} className={`bg-[#0F0F11] border ${req.status === 'Pending' ? 'border-indigo-500/30' : 'border-white/[0.06]'} rounded-2xl p-6 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between hover:border-white/[0.12] transition-colors`}>
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
               <h4 className="text-lg font-semibold text-white">{req.student}</h4>
@@ -15,7 +22,7 @@ export default function Approvals({ requests, handleApproval }) {
                 {req.urgency} Priority
               </span>
               <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                req.status === 'Pending' ? 'bg-slate-500/20 text-slate-400' : 
+                req.status === 'Pending' ? 'bg-indigo-500/20 text-indigo-400 animate-pulse' : 
                 req.status === 'Approved' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
               }`}>
                 {req.status}
