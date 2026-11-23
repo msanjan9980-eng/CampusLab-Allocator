@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   LayoutDashboard, Search, Calendar, FlaskConical, 
   CheckCircle, AlertTriangle, Cpu, Microscope, 
   Box, Activity, Settings, Bell, ChevronRight, 
-  Sparkles, ShieldCheck, Clock, UserCircle2
+  Sparkles, ShieldCheck, Clock, UserCircle2,
+  Filter, X, Check
 } from 'lucide-react';
 
 // --- MOCK DATA ---
@@ -30,23 +31,36 @@ export default function LabLinkApp() {
   const [requests, setRequests] = useState(INITIAL_REQUESTS);
   const [bookings, setBookings] = useState(INITIAL_BOOKINGS);
   
+  // Search & Filter State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState('All');
+
+  // Modal State
   const [selectedItem, setSelectedItem] = useState(null);
   const [isAiResolving, setIsAiResolving] = useState(false);
   const [aiRecommendation, setAiRecommendation] = useState(null);
+  const [selectedTime, setSelectedTime] = useState('10:00 - 12:00');
 
-  const handleBookAttempt = (item, requestedTime) => {
-    setSelectedItem(item);
+  // Toast State
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  // GenAI Resolution Logic
+  const handleBookAttempt = () => {
     setIsAiResolving(true);
     setAiRecommendation(null);
 
     setTimeout(() => {
       setIsAiResolving(false);
-      if (item.status === 'In Use' || item.id === 2) {
+      if (selectedItem.status === 'In Use' || selectedItem.id === 2) {
         setAiRecommendation({
           conflict: true,
           message: "I detected a scheduling conflict for this equipment at your requested time.",
           suggestion: "I recommend booking the 'Prusa MK3S+ FDM Printer' instead. It has the same capabilities for your project requirements and is available at your requested slot.",
-          alternativeId: 3 
         });
       } else {
         setAiRecommendation({
@@ -56,29 +70,54 @@ export default function LabLinkApp() {
         });
         setBookings([...bookings, {
           id: Date.now(),
-          equipment: item.name,
+          equipment: selectedItem.name,
           date: new Date().toISOString().split('T')[0],
-          time: requestedTime || '10:00 - 12:00',
+          time: selectedTime,
           status: 'Pending Faculty Approval'
         }]);
+        showToast('Booking request submitted successfully!');
       }
     }, 1500);
   };
 
   const handleApproval = (id, status) => {
     setRequests(requests.map(req => req.id === id ? { ...req, status } : req));
+    showToast(`Request ${status.toLowerCase()} successfully.`, status === 'Approved' ? 'success' : 'error');
   };
 
+  // Derived Stats
   const stats = useMemo(() => [
-    { label: 'Available Equipment', value: '42', icon: Box, color: 'text-emerald-400' },
+    { label: 'Available Equipment', value: EQUIPMENT.filter(e => e.status === 'Available').length.toString(), icon: Box, color: 'text-emerald-400' },
     { label: 'Active Projects', value: '18', icon: Activity, color: 'text-fuchsia-400' },
-    { label: 'Pending Approvals', value: requests.filter(r => r.status === 'Pending').length, icon: Clock, color: 'text-amber-400' },
+    { label: 'Pending Approvals', value: requests.filter(r => r.status === 'Pending').length.toString(), icon: Clock, color: 'text-amber-400' },
     { label: 'Resource Utilization', value: '78%', icon: Cpu, color: 'text-indigo-400' },
   ], [requests]);
+
+  // Filtered Equipment Logic
+  const filteredEquipment = useMemo(() => {
+    return EQUIPMENT.filter(item => {
+      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            item.dept.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesFilter = activeFilter === 'All' || item.dept === activeFilter || item.status === activeFilter;
+      return matchesSearch && matchesFilter;
+    });
+  }, [searchQuery, activeFilter]);
 
   return (
     <div className="flex h-screen bg-[#0A0A0B] text-slate-200 font-sans selection:bg-fuchsia-500/30">
       
+      {/* TOAST NOTIFICATION */}
+      {toast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-4 fade-in duration-300">
+          <div className={`flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl border backdrop-blur-md ${
+            toast.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+          }`}>
+            {toast.type === 'success' ? <CheckCircle size={18} /> : <AlertTriangle size={18} />}
+            <span className="font-medium text-sm">{toast.message}</span>
+          </div>
+        </div>
+      )}
+
       <aside className="w-64 border-r border-white/5 bg-[#0F0F11] flex flex-col">
         <div className="p-6 flex items-center gap-3 border-b border-white/5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-fuchsia-500/20">
@@ -103,14 +142,8 @@ export default function LabLinkApp() {
           <div className="bg-white/5 rounded-xl p-3 border border-white/5">
             <p className="text-xs text-slate-400 mb-2 font-medium">Demo Role View</p>
             <div className="flex bg-black/40 rounded-lg p-1">
-              <button 
-                onClick={() => { setRole('student'); setCurrentView('dashboard'); }}
-                className={`flex-1 text-xs py-1.5 rounded-md transition-all ${role === 'student' ? 'bg-indigo-500/20 text-indigo-300 shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
-              >Student</button>
-              <button 
-                onClick={() => { setRole('faculty'); setCurrentView('approvals'); }}
-                className={`flex-1 text-xs py-1.5 rounded-md transition-all ${role === 'faculty' ? 'bg-fuchsia-500/20 text-fuchsia-300 shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
-              >Faculty</button>
+              <button aria-label="Switch to Student View" onClick={() => { setRole('student'); setCurrentView('dashboard'); }} className={`flex-1 text-xs py-1.5 rounded-md transition-all focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none ${role === 'student' ? 'bg-indigo-500/20 text-indigo-300 shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}>Student</button>
+              <button aria-label="Switch to Faculty View" onClick={() => { setRole('faculty'); setCurrentView('approvals'); }} className={`flex-1 text-xs py-1.5 rounded-md transition-all focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none ${role === 'faculty' ? 'bg-fuchsia-500/20 text-fuchsia-300 shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}>Faculty</button>
             </div>
           </div>
         </div>
@@ -125,7 +158,7 @@ export default function LabLinkApp() {
             {currentView === 'approvals' && 'Project Access Requests'}
           </h2>
           <div className="flex items-center gap-4">
-            <button className="p-2 text-slate-400 hover:text-white transition-colors relative">
+            <button aria-label="Notifications" className="p-2 text-slate-400 hover:text-white transition-colors relative focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-full outline-none">
               <Bell size={20} />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-fuchsia-500 rounded-full border-2 border-[#0A0A0B]"></span>
             </button>
@@ -140,6 +173,7 @@ export default function LabLinkApp() {
         </header>
 
         <div className="flex-1 overflow-y-auto p-8">
+          {/* DASHBOARD VIEW */}
           {currentView === 'dashboard' && (
             <div className="space-y-6 max-w-6xl mx-auto">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -177,42 +211,72 @@ export default function LabLinkApp() {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-white">Available Near You</h3>
-                  <button onClick={() => setCurrentView('explore')} className="text-sm text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
+                  <button onClick={() => setCurrentView('explore')} className="text-sm text-indigo-400 hover:text-indigo-300 flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-indigo-500 rounded px-1 outline-none">
                     View All <ChevronRight size={16} />
                   </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {EQUIPMENT.slice(0, 3).map(item => (
-                    <EquipmentCard key={item.id} item={item} onBook={() => handleBookAttempt(item)} />
+                    <EquipmentCard key={item.id} item={item} onBook={() => { setSelectedItem(item); setAiRecommendation(null); }} />
                   ))}
                 </div>
               </div>
             </div>
           )}
 
+          {/* EXPLORE VIEW */}
           {currentView === 'explore' && (
             <div className="max-w-6xl mx-auto">
-              <div className="flex gap-4 mb-6">
+              <div className="flex flex-col md:flex-row gap-4 mb-6">
                 <div className="relative flex-1">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
                   <input 
                     type="text" 
-                    placeholder="Search equipment, departments, or capabilities..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search equipment, departments..." 
                     className="w-full bg-[#121214] border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all"
                   />
+                  {searchQuery && (
+                    <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white">
+                      <X size={16} />
+                    </button>
+                  )}
                 </div>
-                <button className="bg-[#121214] border border-white/10 px-4 rounded-xl flex items-center gap-2 text-sm font-medium hover:bg-white/5 transition-colors">
-                  <Settings size={18} /> Filters
-                </button>
+                <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
+                  {['All', 'Available', 'Engineering', 'Computer Science', 'Biology'].map(filter => (
+                    <button
+                      key={filter}
+                      onClick={() => setActiveFilter(filter)}
+                      className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors border ${
+                        activeFilter === filter 
+                          ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-300' 
+                          : 'bg-[#121214] border-white/10 text-slate-400 hover:text-white hover:border-white/20'
+                      }`}
+                    >
+                      {filter}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {EQUIPMENT.map(item => (
-                  <EquipmentCard key={item.id} item={item} onBook={() => handleBookAttempt(item)} />
-                ))}
-              </div>
+              
+              {filteredEquipment.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredEquipment.map(item => (
+                    <EquipmentCard key={item.id} item={item} onBook={() => { setSelectedItem(item); setAiRecommendation(null); }} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-20 bg-[#121214] border border-white/5 rounded-2xl">
+                  <Search className="mx-auto text-slate-500 mb-4" size={48} />
+                  <h3 className="text-lg font-medium text-white mb-1">No equipment found</h3>
+                  <p className="text-slate-400 text-sm">Try adjusting your search query or filters.</p>
+                </div>
+              )}
             </div>
           )}
 
+          {/* BOOKINGS VIEW */}
           {currentView === 'bookings' && (
             <div className="max-w-4xl mx-auto">
               <div className="bg-[#121214] border border-white/5 rounded-2xl overflow-hidden">
@@ -241,17 +305,13 @@ export default function LabLinkApp() {
                         </td>
                       </tr>
                     ))}
-                    {bookings.length === 0 && (
-                      <tr>
-                        <td colSpan="4" className="p-8 text-center text-slate-500">No bookings found.</td>
-                      </tr>
-                    )}
                   </tbody>
                 </table>
               </div>
             </div>
           )}
 
+          {/* APPROVALS VIEW */}
           {currentView === 'approvals' && role === 'faculty' && (
             <div className="max-w-4xl mx-auto space-y-4">
               {requests.map(req => (
@@ -277,11 +337,11 @@ export default function LabLinkApp() {
                   
                   {req.status === 'Pending' && (
                     <div className="flex gap-2 w-full md:w-auto">
-                      <button onClick={() => handleApproval(req.id, 'Rejected')} className="flex-1 md:flex-none px-4 py-2 rounded-xl border border-white/10 text-slate-300 hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/30 transition-all text-sm font-medium">
+                      <button onClick={() => handleApproval(req.id, 'Rejected')} className="flex-1 md:flex-none px-4 py-2 rounded-xl border border-white/10 text-slate-300 hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/30 transition-all text-sm font-medium focus-visible:ring-2 focus-visible:ring-rose-500 outline-none">
                         Reject
                       </button>
-                      <button onClick={() => handleApproval(req.id, 'Approved')} className="flex-1 md:flex-none px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white shadow-lg shadow-indigo-500/20 transition-all text-sm font-medium flex items-center justify-center gap-2">
-                        <CheckCircle size={16} /> Approve
+                      <button onClick={() => handleApproval(req.id, 'Approved')} className="flex-1 md:flex-none px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white shadow-lg shadow-indigo-500/20 transition-all text-sm font-medium flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none">
+                        <Check size={16} /> Approve
                       </button>
                     </div>
                   )}
@@ -292,34 +352,49 @@ export default function LabLinkApp() {
         </div>
       </main>
 
+      {/* ENHANCED BOOKING MODAL */}
       {selectedItem && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#121214] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-[#121214] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-200">
             <div className="h-32 relative">
               <img src={selectedItem.image} alt={selectedItem.name} className="w-full h-full object-cover opacity-60" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#121214] to-transparent"></div>
-              <button onClick={() => { setSelectedItem(null); setAiRecommendation(null); }} className="absolute top-4 right-4 p-2 bg-black/40 hover:bg-black/60 rounded-full text-white transition-colors">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              <button aria-label="Close modal" onClick={() => { setSelectedItem(null); setAiRecommendation(null); }} className="absolute top-4 right-4 p-2 bg-black/40 hover:bg-black/60 rounded-full text-white transition-colors focus-visible:ring-2 focus-visible:ring-white outline-none">
+                <X size={20} />
               </button>
             </div>
             
             <div className="p-6 relative pt-2">
-              <div className="mb-4">
+              <div className="mb-6">
                 <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">{selectedItem.dept}</span>
                 <h2 className="text-xl font-bold text-white mt-1">{selectedItem.name}</h2>
               </div>
 
               {!aiRecommendation && !isAiResolving && (
-                <div className="space-y-4">
+                <div className="space-y-5">
                   <div>
-                    <label className="block text-sm font-medium text-slate-400 mb-2">Select Date & Time</label>
-                    <input type="datetime-local" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-indigo-500 focus:outline-none" defaultValue="2024-05-20T14:00" />
+                    <label className="block text-sm font-medium text-slate-400 mb-2">Select Available Time Slot</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {['09:00 - 11:00', '11:00 - 13:00', '14:00 - 16:00', '16:00 - 18:00'].map(time => (
+                        <button
+                          key={time}
+                          onClick={() => setSelectedTime(time)}
+                          className={`py-2 rounded-lg text-sm font-medium border transition-all ${
+                            selectedTime === time 
+                              ? 'bg-indigo-500/20 border-indigo-500 text-indigo-300' 
+                              : 'bg-black/40 border-white/10 text-slate-400 hover:border-white/30'
+                          }`}
+                        >
+                          {time}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-400 mb-2">Project Justification (GenAI Evaluates)</label>
-                    <textarea className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-indigo-500 focus:outline-none h-20 resize-none" placeholder="Briefly explain what you are building and why you need this..."></textarea>
+                    <textarea className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-indigo-500 focus:outline-none h-20 resize-none text-sm" placeholder="Briefly explain your project requirements..."></textarea>
                   </div>
-                  <button onClick={() => handleBookAttempt(selectedItem, '14:00 - 16:00')} className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+                  <button onClick={handleBookAttempt} className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#121214] outline-none">
                     <Sparkles size={18} /> Request Allocation
                   </button>
                 </div>
@@ -351,7 +426,7 @@ export default function LabLinkApp() {
                         <p className="text-xs text-indigo-300 font-medium flex items-center gap-1 mb-1"><Sparkles size={12}/> AI Suggestion</p>
                         <p className="text-sm text-slate-300">{aiRecommendation.suggestion}</p>
                       </div>
-                      <button onClick={() => { setSelectedItem(null); setAiRecommendation(null); }} className="mt-4 w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium transition-colors text-sm">
+                      <button onClick={() => { setSelectedItem(null); setAiRecommendation(null); }} className="mt-4 w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium transition-colors text-sm focus-visible:ring-2 focus-visible:ring-white outline-none">
                         {aiRecommendation.conflict ? 'Accept Alternative' : 'Close'}
                       </button>
                     </div>
@@ -370,7 +445,7 @@ function NavItem({ icon: Icon, label, active, onClick }) {
   return (
     <button 
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none ${
         active 
           ? 'bg-indigo-500/10 text-indigo-400 font-medium' 
           : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
@@ -415,7 +490,8 @@ function EquipmentCard({ item, onBook }) {
         <div className="mt-auto pt-4 border-t border-white/5">
           <button 
             onClick={onBook}
-            className="w-full py-2 rounded-xl bg-white/5 hover:bg-indigo-500 text-slate-300 hover:text-white text-sm font-medium transition-all flex items-center justify-center gap-2 group/btn"
+            aria-label={`Book slot for ${item.name}`}
+            className="w-full py-2 rounded-xl bg-white/5 hover:bg-indigo-500 text-slate-300 hover:text-white text-sm font-medium transition-all flex items-center justify-center gap-2 group/btn focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none"
           >
             <Calendar size={16} className="text-slate-500 group-hover/btn:text-white transition-colors" />
             Book Slot
