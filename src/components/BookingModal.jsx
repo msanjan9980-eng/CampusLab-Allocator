@@ -1,8 +1,30 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Sparkles, AlertTriangle, CheckCircle } from 'lucide-react';
 
-export default function BookingModal({ selectedItem, setSelectedItem, isAiResolving, aiRecommendation, setAiRecommendation, handleBookAttempt, selectedTime, setSelectedTime }) {
+export default function BookingModal({ selectedItem, setSelectedItem, isAiResolving, setIsAiResolving, aiRecommendation, setAiRecommendation, addBooking, selectedTime, setSelectedTime, simulateGenAI }) {
+  const [justification, setJustification] = useState('');
+
   if (!selectedItem) return null;
+
+  const handleBookAttempt = async () => {
+    setIsAiResolving(true);
+    setAiRecommendation(null);
+
+    const result = await simulateGenAI(selectedItem, selectedTime, justification || "General lab work");
+    
+    setIsAiResolving(false);
+    setAiRecommendation(result);
+
+    if (!result.conflict) {
+      addBooking({
+        id: Date.now(),
+        equipment: selectedItem.name,
+        date: new Date().toISOString().split('T')[0],
+        time: selectedTime,
+        status: 'Pending Faculty Approval'
+      });
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -41,7 +63,7 @@ export default function BookingModal({ selectedItem, setSelectedItem, isAiResolv
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-400 mb-2">Project Justification (GenAI Evaluates)</label>
-                <textarea className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-indigo-500 focus:outline-none h-20 resize-none text-sm" placeholder="Briefly explain your project requirements..."></textarea>
+                <textarea value={justification} onChange={(e) => setJustification(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-indigo-500 focus:outline-none h-20 resize-none text-sm" placeholder="e.g., I need to print a prototype urgently for my final project..."></textarea>
               </div>
               <button onClick={handleBookAttempt} className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#121214] outline-none">
                 <Sparkles size={18} /> Request Allocation

@@ -1,7 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { CheckCircle, AlertTriangle, Bell, UserCircle2, Microscope, Box, Cpu, Activity, FlaskConical, Clock } from 'lucide-react';
 
-// Component Imports
 import Sidebar from './components/Sidebar';
 import BookingModal from './components/BookingModal';
 import Dashboard from './views/Dashboard';
@@ -9,7 +8,6 @@ import Explore from './views/Explore';
 import Bookings from './views/Bookings';
 import Approvals from './views/Approvals';
 
-// --- MOCK DATA ---
 const EQUIPMENT = [
   { id: 1, name: 'High-Res Fluorescence Microscope', dept: 'Biology', type: 'Microscope', status: 'Available', icon: Microscope, image: 'https://images.unsplash.com/photo-1576086213369-97a306d36557?auto=format&fit=crop&q=80&w=400' },
   { id: 2, name: 'Industrial 3D Printer (Resin)', dept: 'Engineering', type: '3D Printing', status: 'In Use', icon: Box, image: 'https://images.unsplash.com/photo-1631549916768-4119b2e5f926?auto=format&fit=crop&q=80&w=400' },
@@ -30,20 +28,27 @@ const INITIAL_BOOKINGS = [
 export default function App() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [role, setRole] = useState('student');
-  const [requests, setRequests] = useState(INITIAL_REQUESTS);
-  const [bookings, setBookings] = useState(INITIAL_BOOKINGS);
   
-  // Search & Filter State
+  const [requests, setRequests] = useState(() => {
+    const saved = localStorage.getItem('lablink_requests');
+    return saved ? JSON.parse(saved) : INITIAL_REQUESTS;
+  });
+  const [bookings, setBookings] = useState(() => {
+    const saved = localStorage.getItem('lablink_bookings');
+    return saved ? JSON.parse(saved) : INITIAL_BOOKINGS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('lablink_requests', JSON.stringify(requests));
+    localStorage.setItem('lablink_bookings', JSON.stringify(bookings));
+  }, [requests, bookings]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
-
-  // Modal State
   const [selectedItem, setSelectedItem] = useState(null);
   const [isAiResolving, setIsAiResolving] = useState(false);
   const [aiRecommendation, setAiRecommendation] = useState(null);
   const [selectedTime, setSelectedTime] = useState('10:00 - 12:00');
-
-  // Toast State
   const [toast, setToast] = useState(null);
 
   const showToast = (message, type = 'success') => {
@@ -51,43 +56,49 @@ export default function App() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  // GenAI Logic
-  const handleBookAttempt = () => {
-    setIsAiResolving(true);
-    setAiRecommendation(null);
-
-    setTimeout(() => {
-      setIsAiResolving(false);
-      if (selectedItem.status === 'In Use' || selectedItem.id === 2) {
-        setAiRecommendation({
-          conflict: true,
-          message: "I detected a scheduling conflict for this equipment at your requested time.",
-          suggestion: "I recommend booking the 'Prusa MK3S+ FDM Printer' instead. It has the same capabilities for your project requirements and is available at your requested slot.",
-        });
-      } else {
-        setAiRecommendation({
-          conflict: false,
-          message: "Resource allocated successfully. I've cross-referenced your project deadline and optimized the slot.",
-          suggestion: "Booking confirmed. Please arrive 10 minutes early for equipment calibration."
-        });
-        setBookings([...bookings, {
-          id: Date.now(),
-          equipment: selectedItem.name,
-          date: new Date().toISOString().split('T')[0],
-          time: selectedTime,
-          status: 'Pending Faculty Approval'
-        }]);
-        showToast('Booking request submitted successfully!');
-      }
-    }, 1500);
-  };
-
   const handleApproval = (id, status) => {
     setRequests(requests.map(req => req.id === id ? { ...req, status } : req));
     showToast(`Request ${status.toLowerCase()} successfully.`, status === 'Approved' ? 'success' : 'error');
   };
 
-  // Derived Data
+  const addBooking = (newBooking) => {
+    setBookings(prev => [...prev, newBooking]);
+    showToast('Booking request submitted successfully!');
+  };
+
+  // --- DYNAMIC GENAI SIMULATION ---
+  const simulateGenAI = (item, time, justification) => {
+    return new Promise(resolve => setTimeout(() => {
+      let conflict = false;
+      let message = "Resource allocated successfully. I've cross-referenced your project deadline and optimized the slot.";
+      let suggestion = "Booking confirmed. Please arrive 10 minutes early for equipment calibration.";
+
+      // Heuristic 1: Item is unavailable
+      if (item.status === 'In Use' || item.status === 'Maintenance') {
+        conflict = true;
+        message = `I detected a scheduling conflict. The ${item.name} is currently marked as ${item.status}.`;
+        suggestion = `I recommend booking the 'Prusa MK3S+ FDM Printer' instead. It has the same capabilities for your project "${justification}" and is available at your requested slot.`;
+      } 
+      // Heuristic 2: Time slot conflict simulation
+      else if (time === '14:00 - 16:00' && item.id === 4) {
+        conflict = true;
+        message = "High demand detected for this equipment at 14:00. A faculty lab session is already scheduled.";
+        suggestion = "I suggest moving your request to the 16:00 - 18:00 slot, which is currently empty, or using the secondary Oscilloscope in Lab B.";
+      }
+      // Heuristic 3: Keyword mismatch
+      else if (justification.toLowerCase().includes('print') && item.id !== 2) {
+        message = "Resource allocated. However, I noticed your project mentions 'printing'. Are you sure you don't need the Engineering 3D Printer?";
+      } 
+      // Heuristic 4: High urgency keywords
+      else if (justification.toLowerCase().includes('urgent') || justification.toLowerCase().includes('deadline')) {
+        message = "Priority flag applied. Based on your justification, I have escalated this request to the Department Head for immediate approval.";
+        suggestion = "Booking confirmed. Fast-tracked calibration will be ready for you.";
+      }
+
+      resolve({ conflict, message, suggestion });
+    }, 1800));
+  };
+
   const stats = useMemo(() => [
     { label: 'Available Equipment', value: EQUIPMENT.filter(e => e.status === 'Available').length.toString(), icon: Box, color: 'text-emerald-400' },
     { label: 'Active Projects', value: '18', icon: Activity, color: 'text-fuchsia-400' },
@@ -97,8 +108,7 @@ export default function App() {
 
   const filteredEquipment = useMemo(() => {
     return EQUIPMENT.filter(item => {
-      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            item.dept.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || item.dept.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesFilter = activeFilter === 'All' || item.dept === activeFilter || item.status === activeFilter;
       return matchesSearch && matchesFilter;
     });
@@ -147,18 +157,15 @@ export default function App() {
           {currentView === 'dashboard' && (
             <Dashboard stats={stats} EQUIPMENT={EQUIPMENT} setCurrentView={setCurrentView} setSelectedItem={setSelectedItem} setAiRecommendation={setAiRecommendation} />
           )}
-          
           {currentView === 'explore' && (
             <Explore searchQuery={searchQuery} setSearchQuery={setSearchQuery} activeFilter={activeFilter} setActiveFilter={setActiveFilter} filteredEquipment={filteredEquipment} setSelectedItem={setSelectedItem} setAiRecommendation={setAiRecommendation} />
           )}
-
           {currentView === 'bookings' && <Bookings bookings={bookings} />}
-
           {currentView === 'approvals' && role === 'faculty' && <Approvals requests={requests} handleApproval={handleApproval} />}
         </div>
       </main>
 
-      <BookingModal selectedItem={selectedItem} setSelectedItem={setSelectedItem} isAiResolving={isAiResolving} aiRecommendation={aiRecommendation} setAiRecommendation={setAiRecommendation} handleBookAttempt={handleBookAttempt} selectedTime={selectedTime} setSelectedTime={setSelectedTime} />
+      <BookingModal selectedItem={selectedItem} setSelectedItem={setSelectedItem} isAiResolving={isAiResolving} setIsAiResolving={setIsAiResolving} aiRecommendation={aiRecommendation} setAiRecommendation={setAiRecommendation} addBooking={addBooking} selectedTime={selectedTime} setSelectedTime={setSelectedTime} simulateGenAI={simulateGenAI} />
     </div>
   );
 }
