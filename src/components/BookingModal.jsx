@@ -1,0 +1,89 @@
+import React from 'react';
+import { X, Sparkles, AlertTriangle, CheckCircle } from 'lucide-react';
+
+export default function BookingModal({ selectedItem, setSelectedItem, isAiResolving, aiRecommendation, setAiRecommendation, handleBookAttempt, selectedTime, setSelectedTime }) {
+  if (!selectedItem) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-[#121214] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-200">
+        <div className="h-32 relative">
+          <img src={selectedItem.image} alt={selectedItem.name} className="w-full h-full object-cover opacity-60" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#121214] to-transparent"></div>
+          <button aria-label="Close modal" onClick={() => { setSelectedItem(null); setAiRecommendation(null); }} className="absolute top-4 right-4 p-2 bg-black/40 hover:bg-black/60 rounded-full text-white transition-colors focus-visible:ring-2 focus-visible:ring-white outline-none">
+            <X size={20} />
+          </button>
+        </div>
+        
+        <div className="p-6 relative pt-2">
+          <div className="mb-6">
+            <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">{selectedItem.dept}</span>
+            <h2 className="text-xl font-bold text-white mt-1">{selectedItem.name}</h2>
+          </div>
+
+          {!aiRecommendation && !isAiResolving && (
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-2">Select Available Time Slot</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {['09:00 - 11:00', '11:00 - 13:00', '14:00 - 16:00', '16:00 - 18:00'].map(time => (
+                    <button
+                      key={time}
+                      onClick={() => setSelectedTime(time)}
+                      className={`py-2 rounded-lg text-sm font-medium border transition-all ${
+                        selectedTime === time ? 'bg-indigo-500/20 border-indigo-500 text-indigo-300' : 'bg-black/40 border-white/10 text-slate-400 hover:border-white/30'
+                      }`}
+                    >
+                      {time}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-2">Project Justification (GenAI Evaluates)</label>
+                <textarea className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-indigo-500 focus:outline-none h-20 resize-none text-sm" placeholder="Briefly explain your project requirements..."></textarea>
+              </div>
+              <button onClick={handleBookAttempt} className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#121214] outline-none">
+                <Sparkles size={18} /> Request Allocation
+              </button>
+            </div>
+          )}
+
+          {isAiResolving && (
+            <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
+              <div className="relative">
+                <div className="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+                <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-fuchsia-400 animate-pulse" size={24} />
+              </div>
+              <div>
+                <h3 className="text-white font-medium">GenAI is analyzing schedules...</h3>
+                <p className="text-sm text-slate-400 mt-1">Resolving conflicts and optimizing resource allocation.</p>
+              </div>
+            </div>
+          )}
+
+          {aiRecommendation && !isAiResolving && (
+            <div className={`p-4 rounded-2xl border ${aiRecommendation.conflict ? 'bg-amber-500/10 border-amber-500/20' : 'bg-emerald-500/10 border-emerald-500/20'}`}>
+              <div className="flex items-start gap-3">
+                {aiRecommendation.conflict ? <AlertTriangle className="text-amber-400 shrink-0" /> : <CheckCircle className="text-emerald-400 shrink-0" />}
+                <div>
+                  <h4 className={`font-semibold ${aiRecommendation.conflict ? 'text-amber-400' : 'text-emerald-400'}`}>
+                    {aiRecommendation.conflict ? 'Conflict Detected' : 'Booking Optimized'}
+                  </h4>
+                  <p className="text-sm text-slate-300 mt-1 leading-relaxed">{aiRecommendation.message}</p>
+                  <div className="mt-4 p-3 bg-black/40 rounded-xl border border-white/5">
+                    <p className="text-xs text-indigo-300 font-medium flex items-center gap-1 mb-1"><Sparkles size={12}/> AI Suggestion</p>
+                    <p className="text-sm text-slate-300">{aiRecommendation.suggestion}</p>
+                  </div>
+                  <button onClick={() => { setSelectedItem(null); setAiRecommendation(null); }} className="mt-4 w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium transition-colors text-sm focus-visible:ring-2 focus-visible:ring-white outline-none">
+                    {aiRecommendation.conflict ? 'Accept Alternative' : 'Close'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
