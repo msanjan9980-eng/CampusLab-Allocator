@@ -219,7 +219,7 @@ export default function App() {
         </div>
       </main>
 
-      <BookingModal selectedItem={selectedItem} setSelectedItem={setSelectedItem} isAiResolving={isAiResolving} setIsAiResolving={setIsAiResolving} aiRecommendation={aiRecommendation} setAiRecommendation={setAiRecommendation} addBooking={addBooking} selectedTime={selectedTime} setSelectedTime={setSelectedTime} simulateGenAI={simulateGenAI} />
+      <BookingModal selectedItem={selectedItem} setSelectedItem={setSelectedItem} isAiResolving={isAiResolving} setIsAiResolving={setIsAiResolving} aiRecommendation={aiRecommendation} setAiRecommendation={setAiRecommendation} addBooking={addBooking} selectedTime={selectedTime} setSelectedTime={setSelectedTime} simulateGenAI={simulateGenAI} bookings={bookings} />
     </div>
   );
 }

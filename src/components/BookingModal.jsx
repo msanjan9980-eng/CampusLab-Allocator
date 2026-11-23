@@ -14,7 +14,7 @@ const TypewriterText = ({ text, speed = 20 }) => {
   return <span>{displayedText}</span>;
 };
 
-export default function BookingModal({ selectedItem, setSelectedItem, isAiResolving, setIsAiResolving, aiRecommendation, setAiRecommendation, addBooking, selectedTime, setSelectedTime, simulateGenAI }) {
+export default function BookingModal({ selectedItem, setSelectedItem, isAiResolving, setIsAiResolving, aiRecommendation, setAiRecommendation, addBooking, selectedTime, setSelectedTime, simulateGenAI, bookings }) {
   const [justification, setJustification] = useState('');
   const [deadline, setDeadline] = useState(() => {
     const d = new Date(); d.setDate(d.getDate() + 7); return d.toISOString().split('T')[0];
@@ -79,9 +79,22 @@ export default function BookingModal({ selectedItem, setSelectedItem, isAiResolv
                 <div>
                   <label className="block text-xs font-medium text-slate-400 mb-2">Time Slot</label>
                   <div className="grid gap-2">
-                    {['09:00 - 11:00', '11:00 - 13:00', '14:00 - 16:00', '16:00 - 18:00'].map(time => (
-                      <button key={time} onClick={() => setSelectedTime(time)} className={`py-2 text-xs rounded-lg font-medium border transition-all ${selectedTime === time ? 'bg-indigo-500/20 border-indigo-500 text-indigo-300' : 'bg-black/40 border-white/10 text-slate-400 hover:border-white/30'}`}>{time}</button>
-                    ))}
+                    {['09:00 - 11:00', '11:00 - 13:00', '14:00 - 16:00', '16:00 - 18:00'].map(time => {
+                      const isBooked = bookings?.some(b => b.equipment === selectedItem.name && b.time === time && b.status !== 'Rejected');
+                      return (
+                        <button 
+                          key={time} 
+                          onClick={() => !isBooked && setSelectedTime(time)} 
+                          disabled={isBooked}
+                          className={`py-2 text-xs rounded-lg font-medium border transition-all ${
+                            isBooked ? 'bg-rose-500/10 border-rose-500/20 text-rose-500/50 cursor-not-allowed line-through' :
+                            selectedTime === time ? 'bg-indigo-500/20 border-indigo-500 text-indigo-300' : 'bg-black/40 border-white/10 text-slate-400 hover:border-white/30'
+                          }`}
+                        >
+                          {time} {isBooked && '(Booked)'}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
                 <div>
