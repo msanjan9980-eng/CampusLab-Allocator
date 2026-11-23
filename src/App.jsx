@@ -16,14 +16,9 @@ const EQUIPMENT = [
   { id: 5, name: 'Chemical Fume Hood', dept: 'Chemistry', type: 'Safety', status: 'Maintenance', icon: FlaskConical, image: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?q=80&w=800&auto=format&fit=crop' },
 ];
 
-const INITIAL_REQUESTS = [
-  { id: 101, student: 'Alex Mercer', project: 'Autonomous Drone Navigation', equipment: 'NVIDIA Jetson Nano Kit', deadline: '2024-05-25', status: 'Pending', urgency: 'High' },
-  { id: 102, student: 'Sarah Chen', project: 'Cellular Respiration Analysis', equipment: 'High-Res Fluorescence Microscope', deadline: '2024-06-10', status: 'Pending', urgency: 'Medium' },
-];
+const INITIAL_REQUESTS = [];
 
-const INITIAL_BOOKINGS = [
-  { id: 201, equipment: 'Digital Oscilloscope 200MHz', date: '2024-05-18', time: '14:00 - 16:00', status: 'Approved' }
-];
+const INITIAL_BOOKINGS = [];
 
 export default function App() {
   const [currentView, setCurrentView] = useState('dashboard');
