@@ -2,18 +2,20 @@ import React, { useState, useMemo } from 'react';
 import { Search, X, ArrowUpDown } from 'lucide-react';
 import EquipmentCard from '../components/EquipmentCard';
 
-export default function Explore({ searchQuery, setSearchQuery, activeFilter, setActiveFilter, filteredEquipment, setSelectedItem, setAiRecommendation }) {
+export default function Explore({ searchQuery, setSearchQuery, activeFilter, setActiveFilter, filteredEquipment, setSelectedItem, setAiRecommendation, favorites, toggleFavorite }) {
   const [sortBy, setSortBy] = useState('default');
 
+  const filteredByFavs = activeFilter === 'Favorites' ? filteredEquipment.filter(item => favorites.includes(item.id)) : filteredEquipment;
+
   const sortedEquipment = useMemo(() => {
-    let items = [...filteredEquipment];
+    let items = [...filteredByFavs];
     if (sortBy === 'available') {
       items.sort((a, b) => (a.status === 'Available' ? -1 : 1));
     } else if (sortBy === 'name') {
       items.sort((a, b) => a.name.localeCompare(b.name));
     }
     return items;
-  }, [filteredEquipment, sortBy]);
+  }, [filteredByFavs, sortBy]);
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -35,7 +37,7 @@ export default function Explore({ searchQuery, setSearchQuery, activeFilter, set
         </div>
         
         <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 items-center">
-          {['All', 'Available', 'Engineering', 'Computer Science', 'Biology'].map(filter => (
+          {['All', 'Favorites', 'Available', 'Engineering', 'Computer Science', 'Biology'].map(filter => (
             <button
               key={filter}
               onClick={() => setActiveFilter(filter)}
@@ -65,7 +67,7 @@ export default function Explore({ searchQuery, setSearchQuery, activeFilter, set
       {sortedEquipment.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {sortedEquipment.map(item => (
-            <EquipmentCard key={item.id} item={item} onBook={() => { setSelectedItem(item); setAiRecommendation(null); }} />
+            <EquipmentCard key={item.id} item={item} onBook={() => { setSelectedItem(item); setAiRecommendation(null); }} isFavorite={favorites.includes(item.id)} toggleFavorite={toggleFavorite} />
           ))}
         </div>
       ) : (

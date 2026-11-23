@@ -26,6 +26,10 @@ export default function App() {
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationRef = useRef(null);
   
+  const [favorites, setFavorites] = useState(() => {
+    const saved = localStorage.getItem('lablink_favorites');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [requests, setRequests] = useState(() => {
     const saved = localStorage.getItem('lablink_requests');
     return saved ? JSON.parse(saved) : INITIAL_REQUESTS;
@@ -38,7 +42,12 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('lablink_requests', JSON.stringify(requests));
     localStorage.setItem('lablink_bookings', JSON.stringify(bookings));
-  }, [requests, bookings]);
+    localStorage.setItem('lablink_favorites', JSON.stringify(favorites));
+  }, [requests, bookings, favorites]);
+
+  const toggleFavorite = (id) => {
+    setFavorites(prev => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]);
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -212,8 +221,8 @@ export default function App() {
         </header>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-10 scroll-smooth">
-          {currentView === 'dashboard' && <Dashboard stats={stats} EQUIPMENT={EQUIPMENT} setCurrentView={setCurrentView} setSelectedItem={setSelectedItem} setAiRecommendation={setAiRecommendation} />}
-          {currentView === 'explore' && <Explore searchQuery={searchQuery} setSearchQuery={setSearchQuery} activeFilter={activeFilter} setActiveFilter={setActiveFilter} filteredEquipment={filteredEquipment} setSelectedItem={setSelectedItem} setAiRecommendation={setAiRecommendation} />}
+          {currentView === 'dashboard' && <Dashboard stats={stats} EQUIPMENT={EQUIPMENT} bookings={bookings} setCurrentView={setCurrentView} setSelectedItem={setSelectedItem} setAiRecommendation={setAiRecommendation} />}
+          {currentView === 'explore' && <Explore searchQuery={searchQuery} setSearchQuery={setSearchQuery} activeFilter={activeFilter} setActiveFilter={setActiveFilter} filteredEquipment={filteredEquipment} setSelectedItem={setSelectedItem} setAiRecommendation={setAiRecommendation} favorites={favorites} toggleFavorite={toggleFavorite} />}
           {currentView === 'bookings' && <Bookings bookings={bookings} />}
           {currentView === 'approvals' && role === 'faculty' && <Approvals requests={requests} handleApproval={handleApproval} />}
         </div>
