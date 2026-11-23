@@ -56,17 +56,34 @@ export default function App() {
     setTimeout(() => setToast(null), 3000);
   };
 
+  // SYNC: When Faculty approves/rejects a request, update the student's booking status too
   const handleApproval = (id, status) => {
     setRequests(requests.map(req => req.id === id ? { ...req, status } : req));
+    setBookings(bookings.map(book => book.id === id ? { ...book, status: status === 'Approved' ? 'Approved' : 'Rejected' } : book));
     showToast(`Request ${status.toLowerCase()} successfully.`, status === 'Approved' ? 'success' : 'error');
   };
 
+  // SYNC: When a student books, create a request for the faculty as well
   const addBooking = (newBooking) => {
+    // 1. Add to student's bookings
     setBookings(prev => [...prev, newBooking]);
-    showToast('Booking request submitted successfully!');
+    
+    // 2. Create a linked request for faculty
+    const newRequest = {
+      id: newBooking.id,
+      student: role === 'student' ? 'Alex Mercer' : 'Dr. Smith',
+      project: newBooking.justification || "General Lab Reservation",
+      equipment: newBooking.equipment,
+      deadline: newBooking.date,
+      status: 'Pending',
+      urgency: newBooking.urgency
+    };
+    setRequests(prev => [...prev, newRequest]);
+    
+    showToast('Request submitted for Faculty Approval!', 'success');
   };
 
-  // --- UPGRADED GENAI SIMULATION (Aligning with Problem Statement) ---
+  // UPGRADED GENAI SIMULATION (Aligning with Problem Statement)
   const simulateGenAI = (item, time, justification, deadline) => {
     return new Promise(resolve => setTimeout(() => {
       let conflict = false;
@@ -77,22 +94,18 @@ export default function App() {
       const deadlineDate = new Date(deadline);
       const daysUntilDeadline = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
 
-      // 1. Conflict Detection (Availability)
       if (item.status === 'In Use' || item.status === 'Maintenance') {
         conflict = true;
         message = `I detected a scheduling conflict. The ${item.name} is currently marked as ${item.status}.`;
         suggestion = `I recommend booking the 'Prusa MK3S+ FDM Printer' instead. It has the same capabilities for your project "${justification}" and is available at your requested slot.`;
       } 
-      // 2. Deadline Proximity (Project Deadlines)
       else if (daysUntilDeadline <= 3 && daysUntilDeadline >= 0) {
         message = `Urgent allocation detected. Your project deadline is in ${daysUntilDeadline} days. I have prioritized your request and fast-tracked faculty approval.`;
         suggestion = `Booking confirmed for ${time}. Equipment will be pre-calibrated for your arrival.`;
       }
-      // 3. Student Requirements (Keyword matching)
       else if (justification.toLowerCase().includes('print') && item.id !== 2) {
         message = "Resource allocated. However, I noticed your project requirements mention 'printing'. Are you sure you don't need the Engineering 3D Printer?";
       } 
-      // 4. Time slot optimization
       else if (time === '14:00 - 16:00' && item.id === 4) {
         conflict = true;
         message = "High demand detected for this equipment at 14:00. A faculty lab session is already scheduled.";

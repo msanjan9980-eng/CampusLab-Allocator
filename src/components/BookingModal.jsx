@@ -5,7 +5,7 @@ const TypewriterText = ({ text, speed = 20 }) => {
   const [displayedText, setDisplayedText] = useState('');
   
   useEffect(() => {
-    setDisplayedText(''); // Reset on new text
+    setDisplayedText(''); 
     let i = 0;
     const typingInterval = setInterval(() => {
       if (i < text.length) {
@@ -26,7 +26,7 @@ export default function BookingModal({ selectedItem, setSelectedItem, isAiResolv
   const [justification, setJustification] = useState('');
   const [deadline, setDeadline] = useState(() => {
     const d = new Date();
-    d.setDate(d.getDate() + 7); // Default to 1 week from now
+    d.setDate(d.getDate() + 7);
     return d.toISOString().split('T')[0];
   });
 
@@ -42,12 +42,20 @@ export default function BookingModal({ selectedItem, setSelectedItem, isAiResolv
     setAiRecommendation(result);
 
     if (!result.conflict) {
+      // Calculate urgency based on deadline
+      const today = new Date();
+      const deadlineDate = new Date(deadline);
+      const daysUntilDeadline = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
+      const urgency = daysUntilDeadline <= 3 ? 'High' : 'Medium';
+
       addBooking({
         id: Date.now(),
         equipment: selectedItem.name,
-        date: deadline, // Use the deadline as the booking date for simplicity
+        date: deadline, 
         time: selectedTime,
-        status: 'Pending Faculty Approval'
+        status: 'Pending Faculty Approval',
+        justification: justification || "General lab work", // Pass this to create the request
+        urgency: urgency
       });
     }
   };
