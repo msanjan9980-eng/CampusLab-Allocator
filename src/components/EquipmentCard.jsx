@@ -1,43 +1,53 @@
-import React from 'react';
-import { Calendar } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, Image as ImageIcon } from 'lucide-react';
 
 export default function EquipmentCard({ item, onBook }) {
   const Icon = item.icon;
+  const [imgError, setImgError] = useState(false);
+
   return (
-    <div className="bg-[#121214] border border-white/5 rounded-2xl overflow-hidden group hover:border-white/10 transition-all flex flex-col">
-      <div className="h-40 relative overflow-hidden bg-black/50">
-        <img src={item.image} alt={item.name} className="w-full h-full object-cover opacity-70 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" />
+    <div className="bg-[#0F0F11] border border-white/[0.06] rounded-2xl overflow-hidden group hover:border-white/[0.15] transition-all duration-300 flex flex-col hover:shadow-2xl hover:shadow-black/50 hover:-translate-y-1">
+      <div className="h-44 relative overflow-hidden bg-[#18181B]">
+        {!imgError ? (
+          <img 
+            src={item.image} 
+            alt={item.name} 
+            onError={() => setImgError(true)}
+            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" 
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center text-slate-600 bg-[#18181B]">
+            <ImageIcon size={32} strokeWidth={1} className="mb-2" />
+            <span className="text-[10px] uppercase tracking-wider font-medium">Image Unavailable</span>
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0F0F11] via-transparent to-transparent"></div>
         <div className="absolute top-3 right-3">
-          <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider backdrop-blur-md flex items-center gap-1 ${
-            item.status === 'Available' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 
-            item.status === 'In Use' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 
-            'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+          <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider backdrop-blur-md border ${
+            item.status === 'Available' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
+            item.status === 'In Use' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 
+            'bg-rose-500/10 text-rose-400 border-rose-500/20'
           }`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${
-              item.status === 'Available' ? 'bg-emerald-400' : item.status === 'In Use' ? 'bg-amber-400' : 'bg-rose-400'
-            }`}></span>
             {item.status}
           </span>
         </div>
       </div>
       <div className="p-5 flex-1 flex flex-col">
-        <div className="flex items-start gap-3 mb-3">
-          <div className="p-2 bg-white/5 rounded-lg text-slate-300">
-            <Icon size={18} />
+        <div className="flex items-start gap-3 mb-4">
+          <div className="p-2 bg-white/[0.04] rounded-lg text-slate-300 border border-white/[0.04]">
+            <Icon size={16} strokeWidth={2} />
           </div>
           <div>
-            <h3 className="font-semibold text-white leading-tight">{item.name}</h3>
-            <p className="text-xs text-slate-500 mt-1">{item.dept} Department</p>
+            <h3 className="text-sm font-medium text-white leading-tight line-clamp-1 group-hover:text-indigo-300 transition-colors">{item.name}</h3>
+            <p className="text-xs text-slate-500 mt-1 font-medium">{item.dept}</p>
           </div>
         </div>
-        <div className="mt-auto pt-4 border-t border-white/5">
+        <div className="mt-auto pt-4">
           <button 
             onClick={onBook}
-            aria-label={`Book slot for ${item.name}`}
-            className="w-full py-2 rounded-xl bg-white/5 hover:bg-indigo-500 text-slate-300 hover:text-white text-sm font-medium transition-all flex items-center justify-center gap-2 group/btn focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none"
+            className="w-full py-2 rounded-lg bg-white/[0.04] hover:bg-indigo-500 text-slate-300 hover:text-white text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 border border-white/[0.06] hover:border-indigo-400"
           >
-            <Calendar size={16} className="text-slate-500 group-hover/btn:text-white transition-colors" />
-            Book Slot
+            <Calendar size={14} strokeWidth={2} /> Book Slot
           </button>
         </div>
       </div>
