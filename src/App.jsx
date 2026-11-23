@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { CheckCircle, AlertTriangle, Bell, UserCircle2, Microscope, Box, Cpu, Activity, FlaskConical, Clock } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Bell, UserCircle2, Microscope, Box, Cpu, Activity, FlaskConical, Clock, Menu } from 'lucide-react';
 
 import Sidebar from './components/Sidebar';
 import BookingModal from './components/BookingModal';
@@ -17,12 +17,12 @@ const EQUIPMENT = [
 ];
 
 const INITIAL_REQUESTS = [];
-
 const INITIAL_BOOKINGS = [];
 
 export default function App() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [role, setRole] = useState('student');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   const [requests, setRequests] = useState(() => {
     const saved = localStorage.getItem('lablink_requests');
@@ -51,43 +51,28 @@ export default function App() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  // SYNC: When Faculty approves/rejects a request, update the student's booking status too
   const handleApproval = (id, status) => {
     setRequests(requests.map(req => req.id === id ? { ...req, status } : req));
     setBookings(bookings.map(book => book.id === id ? { ...book, status: status === 'Approved' ? 'Approved' : 'Rejected' } : book));
     showToast(`Request ${status.toLowerCase()} successfully.`, status === 'Approved' ? 'success' : 'error');
   };
 
-  // SYNC: When a student books, create a request for the faculty as well
   const addBooking = (newBooking) => {
-    // 1. Add to student's bookings
     setBookings(prev => [...prev, newBooking]);
-    
-    // 2. Create a linked request for faculty
     const newRequest = {
-      id: newBooking.id,
-      student: role === 'student' ? 'Alex Mercer' : 'Dr. Smith',
-      project: newBooking.justification || "General Lab Reservation",
-      equipment: newBooking.equipment,
-      deadline: newBooking.date,
-      status: 'Pending',
-      urgency: newBooking.urgency
+      id: newBooking.id, student: 'Alex Mercer', project: newBooking.justification || "General Lab Reservation",
+      equipment: newBooking.equipment, deadline: newBooking.date, status: 'Pending', urgency: newBooking.urgency
     };
     setRequests(prev => [...prev, newRequest]);
-    
     showToast('Request submitted for Faculty Approval!', 'success');
   };
 
-  // UPGRADED GENAI SIMULATION (Aligning with Problem Statement)
   const simulateGenAI = (item, time, justification, deadline) => {
     return new Promise(resolve => setTimeout(() => {
       let conflict = false;
       let message = "Resource allocated successfully. I've cross-referenced your project deadline and optimized the slot.";
       let suggestion = "Booking confirmed. Please arrive 10 minutes early for equipment calibration.";
-
-      const today = new Date();
-      const deadlineDate = new Date(deadline);
-      const daysUntilDeadline = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
+      const daysUntilDeadline = Math.ceil((new Date(deadline) - new Date()) / (1000 * 60 * 60 * 24));
 
       if (item.status === 'In Use' || item.status === 'Maintenance') {
         conflict = true;
@@ -106,7 +91,6 @@ export default function App() {
         message = "High demand detected for this equipment at 14:00. A faculty lab session is already scheduled.";
         suggestion = "I suggest moving your request to the 16:00 - 18:00 slot, which is currently empty, or using the secondary Oscilloscope in Lab B.";
       }
-
       resolve({ conflict, message, suggestion });
     }, 1800));
   };
@@ -127,53 +111,53 @@ export default function App() {
   }, [searchQuery, activeFilter]);
 
   return (
-    <div className="flex h-screen bg-[#050505] text-slate-200 font-sans selection:bg-indigo-500/30 antialiased">
+    <div className="flex h-screen bg-[#050505] text-slate-200 font-sans selection:bg-indigo-500/30 antialiased overflow-hidden">
       
       {toast && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-4 fade-in duration-300">
-          <div className={`flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl border backdrop-blur-md ${
-            toast.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-          }`}>
+          <div className={`flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl border backdrop-blur-md ${toast.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}>
             {toast.type === 'success' ? <CheckCircle size={18} /> : <AlertTriangle size={18} />}
             <span className="font-medium text-sm tracking-wide">{toast.message}</span>
           </div>
         </div>
       )}
 
-      <Sidebar currentView={currentView} setCurrentView={setCurrentView} role={role} setRole={setRole} />
+      <Sidebar currentView={currentView} setCurrentView={setCurrentView} role={role} setRole={setRole} isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
-      <main className="flex-1 flex flex-col overflow-hidden relative">
-        <header className="h-20 border-b border-white/[0.06] flex items-center justify-between px-10 bg-[#050505]/80 backdrop-blur-xl sticky top-0 z-10">
-          <h2 className="text-xl font-medium tracking-tight text-white">
-            {currentView === 'dashboard' && 'Overview'}
-            {currentView === 'explore' && 'Equipment Discovery'}
-            {currentView === 'bookings' && (role === 'student' ? 'My Reservations' : 'Department Bookings')}
-            {currentView === 'approvals' && 'Project Access Requests'}
-          </h2>
-          <div className="flex items-center gap-6">
-            <button aria-label="Notifications" className="p-2 text-slate-400 hover:text-white transition-colors relative outline-none">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        <header className="h-20 border-b border-white/[0.06] flex items-center justify-between px-4 md:px-10 bg-[#050505]/80 backdrop-blur-xl sticky top-0 z-10">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 text-slate-400 hover:text-white">
+              <Menu size={24} />
+            </button>
+            <h2 className="text-lg md:text-xl font-medium tracking-tight text-white truncate">
+              {currentView === 'dashboard' && 'Overview'}
+              {currentView === 'explore' && 'Equipment Discovery'}
+              {currentView === 'bookings' && (role === 'student' ? 'My Reservations' : 'Department Bookings')}
+              {currentView === 'approvals' && 'Project Access Requests'}
+            </h2>
+          </div>
+          
+          <div className="flex items-center gap-3 md:gap-6">
+            <button className="p-2 text-slate-400 hover:text-white transition-colors relative outline-none">
               <Bell size={20} strokeWidth={1.5} />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-fuchsia-500 rounded-full border-2 border-[#050505]"></span>
             </button>
-            <div className="flex items-center gap-4 pl-6 border-l border-white/10">
+            <div className="flex items-center gap-3 md:gap-4 pl-3 md:pl-6 border-l border-white/10">
               <div className="text-right hidden md:block">
                 <p className="text-sm font-medium text-white">{role === 'student' ? 'Alex Mercer' : 'Dr. Smith'}</p>
                 <p className="text-xs text-slate-500">{role === 'student' ? 'Computer Science' : 'Faculty - Engineering'}</p>
               </div>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500/20 to-fuchsia-500/20 border border-white/10 flex items-center justify-center">
-                <UserCircle2 size={24} className="text-slate-300" strokeWidth={1.5} />
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-indigo-500/20 to-fuchsia-500/20 border border-white/10 flex items-center justify-center">
+                <UserCircle2 size={20} className="text-slate-300 md:w-6 md:h-6" strokeWidth={1.5} />
               </div>
             </div>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-10 scroll-smooth">
-          {currentView === 'dashboard' && (
-            <Dashboard stats={stats} EQUIPMENT={EQUIPMENT} setCurrentView={setCurrentView} setSelectedItem={setSelectedItem} setAiRecommendation={setAiRecommendation} />
-          )}
-          {currentView === 'explore' && (
-            <Explore searchQuery={searchQuery} setSearchQuery={setSearchQuery} activeFilter={activeFilter} setActiveFilter={setActiveFilter} filteredEquipment={filteredEquipment} setSelectedItem={setSelectedItem} setAiRecommendation={setAiRecommendation} />
-          )}
+        <div className="flex-1 overflow-y-auto p-4 md:p-10 scroll-smooth">
+          {currentView === 'dashboard' && <Dashboard stats={stats} EQUIPMENT={EQUIPMENT} setCurrentView={setCurrentView} setSelectedItem={setSelectedItem} setAiRecommendation={setAiRecommendation} />}
+          {currentView === 'explore' && <Explore searchQuery={searchQuery} setSearchQuery={setSearchQuery} activeFilter={activeFilter} setActiveFilter={setActiveFilter} filteredEquipment={filteredEquipment} setSelectedItem={setSelectedItem} setAiRecommendation={setAiRecommendation} />}
           {currentView === 'bookings' && <Bookings bookings={bookings} />}
           {currentView === 'approvals' && role === 'faculty' && <Approvals requests={requests} handleApproval={handleApproval} />}
         </div>
