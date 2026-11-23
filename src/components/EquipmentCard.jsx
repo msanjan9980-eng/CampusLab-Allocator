@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Image as ImageIcon, Star } from 'lucide-react';
+import { Calendar, Star } from 'lucide-react';
 
 export default function EquipmentCard({ item, onBook, isFavorite, toggleFavorite }) {
   const Icon = item.icon;
@@ -17,11 +17,19 @@ export default function EquipmentCard({ item, onBook, isFavorite, toggleFavorite
 
       <div className="h-44 relative overflow-hidden bg-[#18181B]">
         {!imgError ? (
-          <img src={item.image} alt={item.name} onError={() => setImgError(true)} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" />
+          <img
+            src={item.image}
+            alt={`${item.name} in a laboratory`}
+            loading="lazy"
+            decoding="async"
+            onError={() => setImgError(true)}
+            className="w-full h-full object-cover opacity-85 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
+          />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center text-slate-600 bg-[#18181B]">
-            <ImageIcon size={32} strokeWidth={1} className="mb-2" />
-            <span className="text-[10px] uppercase tracking-wider font-medium">Image Unavailable</span>
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-950 via-[#18181B] to-fuchsia-950">
+            <div className="rounded-2xl border border-white/10 bg-black/25 p-5 text-indigo-200 shadow-xl">
+              <Icon size={42} strokeWidth={1.25} />
+            </div>
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#0F0F11] via-transparent to-transparent"></div>
