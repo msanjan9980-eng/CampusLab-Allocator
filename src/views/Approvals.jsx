@@ -5,7 +5,7 @@ export default function Approvals({ requests, handleApproval }) {
   return (
     <div className="max-w-4xl mx-auto space-y-4">
       {requests.map(req => (
-        <div key={req.id} className="bg-[#121214] border border-white/5 rounded-2xl p-6 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
+        <div key={req.id} className="bg-[#0F0F11] border border-white/[0.06] rounded-2xl p-6 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between hover:border-white/[0.12] transition-colors">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
               <h4 className="text-lg font-semibold text-white">{req.student}</h4>
@@ -22,7 +22,11 @@ export default function Approvals({ requests, handleApproval }) {
               </span>
             </div>
             <p className="text-sm text-slate-300 mb-1"><span className="text-slate-500">Project:</span> {req.project}</p>
-            <p className="text-sm text-slate-300"><span className="text-slate-500">Equipment:</span> {req.equipment} <span className="text-slate-600 mx-2">|</span> <span className="text-slate-500">Req Date:</span> {req.date}</p>
+            <div className="flex items-center gap-4 text-sm text-slate-300">
+              <p><span className="text-slate-500">Equipment:</span> {req.equipment}</p>
+              <span className="text-slate-700">|</span>
+              <p><span className="text-slate-500">Deadline:</span> <span className="text-rose-300 font-medium">{req.deadline || req.date}</span></p>
+            </div>
           </div>
           
           {req.status === 'Pending' && (

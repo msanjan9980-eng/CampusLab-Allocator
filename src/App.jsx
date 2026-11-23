@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { CheckCircle, AlertTriangle, Bell, UserCircle2, Microscope, Box, Cpu, Activity, FlaskConical, Clock, Search } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Bell, UserCircle2, Microscope, Box, Cpu, Activity, FlaskConical, Clock } from 'lucide-react';
 
 import Sidebar from './components/Sidebar';
 import BookingModal from './components/BookingModal';
@@ -8,7 +8,6 @@ import Explore from './views/Explore';
 import Bookings from './views/Bookings';
 import Approvals from './views/Approvals';
 
-// High-Quality, Reliable Images
 const EQUIPMENT = [
   { id: 1, name: 'High-Res Fluorescence Microscope', dept: 'Biology', type: 'Microscope', status: 'Available', icon: Microscope, image: 'https://images.unsplash.com/photo-1576086213369-97a306d36557?q=80&w=800&auto=format&fit=crop' },
   { id: 2, name: 'Industrial 3D Printer (Resin)', dept: 'Engineering', type: '3D Printing', status: 'In Use', icon: Box, image: 'https://images.unsplash.com/photo-1615870216519-2f9fa575fa5c?q=80&w=800&auto=format&fit=crop' },
@@ -18,8 +17,8 @@ const EQUIPMENT = [
 ];
 
 const INITIAL_REQUESTS = [
-  { id: 101, student: 'Alex Mercer', project: 'Autonomous Drone Navigation', equipment: 'NVIDIA Jetson Nano Kit', date: '2024-05-20', status: 'Pending', urgency: 'High' },
-  { id: 102, student: 'Sarah Chen', project: 'Cellular Respiration Analysis', equipment: 'High-Res Fluorescence Microscope', date: '2024-05-22', status: 'Pending', urgency: 'Medium' },
+  { id: 101, student: 'Alex Mercer', project: 'Autonomous Drone Navigation', equipment: 'NVIDIA Jetson Nano Kit', deadline: '2024-05-25', status: 'Pending', urgency: 'High' },
+  { id: 102, student: 'Sarah Chen', project: 'Cellular Respiration Analysis', equipment: 'High-Res Fluorescence Microscope', deadline: '2024-06-10', status: 'Pending', urgency: 'Medium' },
 ];
 
 const INITIAL_BOOKINGS = [
@@ -67,28 +66,37 @@ export default function App() {
     showToast('Booking request submitted successfully!');
   };
 
-  const simulateGenAI = (item, time, justification) => {
+  // --- UPGRADED GENAI SIMULATION (Aligning with Problem Statement) ---
+  const simulateGenAI = (item, time, justification, deadline) => {
     return new Promise(resolve => setTimeout(() => {
       let conflict = false;
       let message = "Resource allocated successfully. I've cross-referenced your project deadline and optimized the slot.";
       let suggestion = "Booking confirmed. Please arrive 10 minutes early for equipment calibration.";
 
+      const today = new Date();
+      const deadlineDate = new Date(deadline);
+      const daysUntilDeadline = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
+
+      // 1. Conflict Detection (Availability)
       if (item.status === 'In Use' || item.status === 'Maintenance') {
         conflict = true;
         message = `I detected a scheduling conflict. The ${item.name} is currently marked as ${item.status}.`;
         suggestion = `I recommend booking the 'Prusa MK3S+ FDM Printer' instead. It has the same capabilities for your project "${justification}" and is available at your requested slot.`;
       } 
+      // 2. Deadline Proximity (Project Deadlines)
+      else if (daysUntilDeadline <= 3 && daysUntilDeadline >= 0) {
+        message = `Urgent allocation detected. Your project deadline is in ${daysUntilDeadline} days. I have prioritized your request and fast-tracked faculty approval.`;
+        suggestion = `Booking confirmed for ${time}. Equipment will be pre-calibrated for your arrival.`;
+      }
+      // 3. Student Requirements (Keyword matching)
+      else if (justification.toLowerCase().includes('print') && item.id !== 2) {
+        message = "Resource allocated. However, I noticed your project requirements mention 'printing'. Are you sure you don't need the Engineering 3D Printer?";
+      } 
+      // 4. Time slot optimization
       else if (time === '14:00 - 16:00' && item.id === 4) {
         conflict = true;
         message = "High demand detected for this equipment at 14:00. A faculty lab session is already scheduled.";
         suggestion = "I suggest moving your request to the 16:00 - 18:00 slot, which is currently empty, or using the secondary Oscilloscope in Lab B.";
-      }
-      else if (justification.toLowerCase().includes('print') && item.id !== 2) {
-        message = "Resource allocated. However, I noticed your project mentions 'printing'. Are you sure you don't need the Engineering 3D Printer?";
-      } 
-      else if (justification.toLowerCase().includes('urgent') || justification.toLowerCase().includes('deadline')) {
-        message = "Priority flag applied. Based on your justification, I have escalated this request to the Department Head for immediate approval.";
-        suggestion = "Booking confirmed. Fast-tracked calibration will be ready for you.";
       }
 
       resolve({ conflict, message, suggestion });
