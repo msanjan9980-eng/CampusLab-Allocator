@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { CheckCircle, AlertTriangle, Bell, UserCircle2, Microscope, Box, Cpu, Activity, FlaskConical, Clock, Menu } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { CheckCircle, AlertTriangle, Bell, UserCircle2, Microscope, Box, Cpu, Activity, FlaskConical, Clock, Menu, Sparkles } from 'lucide-react';
 
 import Sidebar from './components/Sidebar';
 import BookingModal from './components/BookingModal';
@@ -23,6 +23,8 @@ export default function App() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [role, setRole] = useState('student');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notificationRef = useRef(null);
   
   const [requests, setRequests] = useState(() => {
     const saved = localStorage.getItem('lablink_requests');
@@ -37,6 +39,17 @@ export default function App() {
     localStorage.setItem('lablink_requests', JSON.stringify(requests));
     localStorage.setItem('lablink_bookings', JSON.stringify(bookings));
   }, [requests, bookings]);
+
+  // Close notifications when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
@@ -125,9 +138,9 @@ export default function App() {
       <Sidebar currentView={currentView} setCurrentView={setCurrentView} role={role} setRole={setRole} isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        <header className="h-20 border-b border-white/[0.06] flex items-center justify-between px-4 md:px-10 bg-[#050505]/80 backdrop-blur-xl sticky top-0 z-10">
+        <header className="h-20 border-b border-white/[0.06] flex items-center justify-between px-4 md:px-10 bg-[#050505]/80 backdrop-blur-xl sticky top-0 z-20">
           <div className="flex items-center gap-3">
-            <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 text-slate-400 hover:text-white">
+            <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 text-slate-400 hover:text-white focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-lg outline-none">
               <Menu size={24} />
             </button>
             <h2 className="text-lg md:text-xl font-medium tracking-tight text-white truncate">
@@ -139,10 +152,37 @@ export default function App() {
           </div>
           
           <div className="flex items-center gap-3 md:gap-6">
-            <button className="p-2 text-slate-400 hover:text-white transition-colors relative outline-none">
-              <Bell size={20} strokeWidth={1.5} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-fuchsia-500 rounded-full border-2 border-[#050505]"></span>
-            </button>
+            <div className="relative" ref={notificationRef}>
+              <button onClick={() => setShowNotifications(!showNotifications)} aria-label="Notifications" className="p-2 text-slate-400 hover:text-white transition-colors relative outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-full">
+                <Bell size={20} strokeWidth={1.5} />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-fuchsia-500 rounded-full border-2 border-[#050505]"></span>
+              </button>
+              
+              {showNotifications && (
+                <div className="absolute right-0 mt-3 w-80 bg-[#0F0F11] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                  <div className="p-4 border-b border-white/5 bg-white/[0.02]">
+                    <h3 className="text-sm font-medium text-white">Notifications</h3>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    <div className="p-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors flex gap-3">
+                      <div className="mt-0.5 p-1.5 bg-indigo-500/10 rounded-full text-indigo-400"><Sparkles size={14} /></div>
+                      <div>
+                        <p className="text-sm text-slate-200">GenAI optimized your schedule.</p>
+                        <p className="text-xs text-slate-500 mt-1">10 minutes ago</p>
+                      </div>
+                    </div>
+                    <div className="p-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors flex gap-3">
+                      <div className="mt-0.5 p-1.5 bg-emerald-500/10 rounded-full text-emerald-400"><CheckCircle size={14} /></div>
+                      <div>
+                        <p className="text-sm text-slate-200">A booking was approved by Faculty.</p>
+                        <p className="text-xs text-slate-500 mt-1">2 hours ago</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="flex items-center gap-3 md:gap-4 pl-3 md:pl-6 border-l border-white/10">
               <div className="text-right hidden md:block">
                 <p className="text-sm font-medium text-white">{role === 'student' ? 'Alex Mercer' : 'Dr. Smith'}</p>
