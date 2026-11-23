@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, ChevronRight, BarChart2, Activity, CheckCircle2, Clock } from 'lucide-react';
+import { Sparkles, ChevronRight, BarChart2, Activity, CheckCircle2, Clock, ShieldCheck } from 'lucide-react';
 import EquipmentCard from '../components/EquipmentCard';
 
 export default function Dashboard({ stats, EQUIPMENT, setCurrentView, setSelectedItem, setAiRecommendation }) {
